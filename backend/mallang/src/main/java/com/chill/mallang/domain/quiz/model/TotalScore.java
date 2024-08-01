@@ -1,0 +1,34 @@
+package com.chill.mallang.domain.quiz.model;
+
+import com.chill.mallang.domain.area.model.Area;
+import com.chill.mallang.domain.user.model.User;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+public class TotalScore {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user")
+    private User user;
+    @ManyToOne
+    @JoinColumn(name = "area")
+    private Area area;
+
+    @NotNull
+    private float totalScore;
+    @NotNull
+    private LocalDateTime created_at;
+
+    @PrePersist
+    protected void onCreate() {
+        this.created_at = LocalDateTime.now();
+    }
+}
