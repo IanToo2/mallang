@@ -13,6 +13,4 @@ public class WordCardDto {
     private String word;
     private String meaning;
     private String example;
-// 예문 데이터 없음
-//    private String example;
 }
