@@ -40,6 +40,7 @@ import androidx.navigation.NavController
 import com.chill.mallang.R
 import com.chill.mallang.ui.component.BackConfirmHandler
 import com.chill.mallang.ui.component.LoadingDialog
+import com.chill.mallang.ui.component.LongBlackButton
 import com.chill.mallang.ui.component.NoteChangeButton
 import com.chill.mallang.ui.component.PosBox
 import com.chill.mallang.ui.feature.topbar.TopbarHandler
@@ -52,11 +53,10 @@ fun WordNoteScreen(
     modifier: Modifier = Modifier,
     wordViewModel: WordNoteViewModel = hiltViewModel(),
     popUpBackStack: () -> Unit = {},
-    navigateToQuiz: (Int) -> Unit = {},
+    navigateToIncorrectWord: () -> Unit = {},
+    navigateToStudy: (Int) -> Unit = {},
 ) {
     val wordNoteState by wordViewModel.wordNoteState.collectAsStateWithLifecycle()
-
-    var isWordScreen by remember { mutableStateOf(true) }
 
     // TopBar
     val (navController, setNavController) = remember { mutableStateOf<NavController?>(null) }
@@ -82,7 +82,7 @@ fun WordNoteScreen(
 
     TopbarHandler(
         isVisible = true,
-        title = if (isWordScreen) context.getString(R.string.word_note) else context.getString(R.string.incorrect_word_note),
+        title = context.getString(R.string.word_note),
         onBack = { nav ->
             setBackPressed(true)
             setNavController(nav)
@@ -95,16 +95,9 @@ fun WordNoteScreen(
                 modifier = modifier,
                 context = context,
                 wordNoteState = wordNoteState as WordNoteState.Success,
-                navigateToQuiz = navigateToQuiz,
-                isWordScreen = isWordScreen,
+                navigateToQuiz = navigateToStudy,
                 onClick = {
-                    if (isWordScreen) {
-                        wordViewModel.loadIncorrectWords()
-                        isWordScreen = false
-                    } else {
-                        wordViewModel.loadWords()
-                        isWordScreen = true
-                    }
+                    navigateToIncorrectWord()
                 },
             )
         }
@@ -132,61 +125,64 @@ fun WordNoteScreenContent(
     context: Context,
     wordNoteState: WordNoteState.Success,
     navigateToQuiz: (Int) -> Unit = {},
-    isWordScreen: Boolean,
     onClick: () -> Unit = {},
 ) {
     var selectedWordIndex by remember { mutableStateOf<Int?>(null) }
 
-    Surface(
-        modifier = modifier
-            .fillMaxSize()
-            .background(color = White),
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(color = White),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             NoteChangeButton(
                 context = context,
-                isWordScreen = isWordScreen,
-                onClick = onClick
+                isWordScreen = true,
+                onClick = onClick,
             )
-            GridWordList(
-                wordList = wordNoteState.wordList,
-                onWordClick = { index ->
-                    selectedWordIndex = index
-                }
-            )
+            Box(modifier = Modifier.weight(1f)) {
+                GridWordList(
+                    wordList = wordNoteState.wordList,
+                    onWordClick = { index ->
+                        selectedWordIndex = index
+                    },
+                )
+            }
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                LongBlackButton(
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    onClick = { navigateToQuiz(-1) },
+                    text = context.getString(R.string.go_to_study_quiz),
+                )
+            }
+            Spacer(modifier = Modifier.height(45.dp))
         }
     }
 
-    if (isWordScreen) {
-        selectedWordIndex?.let { index ->
-            WordCardDialog(
-                index = index,
-                wordCards = wordNoteState.wordList,
-                onDismiss = { selectedWordIndex = null },
-            )
-        }
-    } else {
-        // 오답노트일 때는 그때 풀었던 거 보여줌.
-        selectedWordIndex?.let { index ->
-            val word = wordNoteState.wordList[index]
-            if (word is Word.IncorrectWord) {
-                navigateToQuiz(word.studyId)
-            }
-        }
+    selectedWordIndex?.let { index ->
+        WordCardDialog(
+            index = index,
+            wordCards = wordNoteState.wordList,
+            onDismiss = { selectedWordIndex = null },
+        )
     }
 }
 
 @Composable
 fun GridWordList(
-    wordList: List<Word>,
-    onWordClick: (Int) -> Unit
+    wordList: List<CorrectWord>,
+    onWordClick: (Int) -> Unit,
 ) {
     LazyVerticalGrid(
         modifier = Modifier.padding(horizontal = 12.dp),
         columns = GridCells.Fixed(3),
-        state = rememberLazyGridState()
+        state = rememberLazyGridState(),
     ) {
         items(wordList.size, span = {
             GridItemSpan(1)
@@ -196,7 +192,7 @@ fun GridWordList(
                 word = word,
                 onClick = {
                     onWordClick(index)
-                }
+                },
             )
         }
     }
@@ -204,37 +200,35 @@ fun GridWordList(
 
 @Composable
 fun WordListItem(
-    word: Word,
+    word: CorrectWord,
     onClick: () -> Unit,
 ) {
-    val correctWord = word as Word.CorrectWord
-
     Surface(
-        modifier = Modifier
-            .fillMaxWidth(0.3f)
-            .height(110.dp)
-            .padding(horizontal = 5.dp, vertical = 8.dp)
-            .shadow(
-                elevation = 5.dp,
-                shape = RoundedCornerShape(15.dp),
-            )
-            .clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .fillMaxWidth(0.3f)
+                .height(110.dp)
+                .padding(horizontal = 5.dp, vertical = 8.dp)
+                .shadow(
+                    elevation = 5.dp,
+                    shape = RoundedCornerShape(15.dp),
+                ).clickable(onClick = onClick),
         shadowElevation = 10.dp,
         shape = RoundedCornerShape(15.dp),
         color = BackGround,
-        border = BorderStroke(width = 2.dp, color = Gray6)
-
+        border = BorderStroke(width = 2.dp, color = Gray6),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 10.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
-            Text(text = correctWord.word, style = Typography.labelLarge)
+            Text(text = word.word, style = Typography.labelLarge)
             Spacer(modifier = Modifier.height(5.dp))
-            PosBox(pos = correctWord.pos)
+            PosBox(pos = word.pos)
         }
     }
 }
@@ -244,13 +238,13 @@ fun WordListItem(
 fun WordNotePreview() {
 //    WordNoteScreen()
     WordListItem(
-        word = Word.CorrectWord(
-            word = "괄목",
-            pos = "명사",
-            meaning = "뜻",
-            example = "예시"
-        )
+        word =
+            CorrectWord(
+                word = "괄목",
+                pos = "명사",
+                meaning = "뜻",
+                example = "예시",
+            ),
     ) {
-
     }
 }
