@@ -9,6 +9,27 @@
 
 </div>
 
+> SSAFY 11기 공통 프로젝트(CHILL203 팀)의 저장소를 개인 포트폴리오용으로 옮긴 사본입니다.  
+> 공개를 위해 설정 파일의 비밀번호·API 키 등 민감 정보는 커밋 히스토리 전체에서 제거하고 환경변수 참조로 바꿨습니다.
+
+## 🙋 내 역할 (김정인 · 백엔드 팀장)
+
+- 퀴즈·학습·영역 점령 도메인의 핵심 API 설계 및 구현 주도
+- 퀴즈 결과 집계 로직과 6시간 단위 문제 스케줄링 구현, 일일 결산 API 고도화
+- User/Area API 응답 규격 정비 및 DTO/에러코드 리팩토링으로 클라이언트 연동 안정화
+- Spring Security + JWT/OAuth2 인증 흐름 정리, Swagger 기반 요청/응답 스키마 문서화
+- 운영 환경(application-prod, Dockerfile) 설정 정비 및 Jenkins 기반 배포 파이프라인 유지보수
+
+### 실행에 필요한 환경변수 (backend, `prod` 프로필)
+
+| 변수 | 용도 |
+|---|---|
+| `DB_HOST` | MariaDB 호스트 (기본값 `localhost`) |
+| `DB_PASSWORD` | MariaDB 비밀번호 |
+| `OPENAI_API_KEY` | 퀴즈 생성용 OpenAI API 키 |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `JWT_SECRET` | JWT 서명 키 |
+
 ## ✨ 프로젝트 소개
 
 - 말랑을 통해 문해력을 키워보세요.
